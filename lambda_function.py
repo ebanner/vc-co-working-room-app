@@ -5,14 +5,10 @@ import json
 import os
 import urllib.parse
 
-import boto3
 from slack_sdk import WebClient
 
-CHANNEL_ID = 'co-working-room'
-
-s3 = boto3.client('s3')
-
-BUCKET = 'storage9'
+CHANNEL_NAME = 'co-working-room'
+CHANNEL_ID = 'C095C1P7U64'
 
 SLACK_BOT_TOKEN = os.environ['EDWARDS_SLACKBOT_DEV_SLACK_BOT_TOKEN']
 
@@ -23,19 +19,6 @@ ZOOM_WEBHOOK_SECRET_TOKEN = os.environ["ZOOM_WEBHOOK_SECRET_TOKEN"]
 ZOOM_JOIN_URL = os.environ["ZOOM_JOIN_URL"]
 
 ZOOM_DESKTOP_APP_JOIN_URL = os.environ["ZOOM_DESKTOP_APP_JOIN_URL"]
-
-
-def put(key, value):
-    s3.put_object(Bucket=BUCKET, Key=key, Body=value)
-
-
-def get(key):
-    """If there is no key entry then return None"""
-
-    object = s3.get_object(Bucket=BUCKET, Key=key)
-
-    value = object['Body'].read().decode('utf-8')
-    return value
 
 
 def is_slash_command(event):
@@ -63,10 +46,8 @@ def handle_start_call():
 
     call_id = response.data['call']['id']
 
-    put('co-working-room-call-id', call_id)
-
     response = slack_client.chat_postMessage(
-        channel=CHANNEL_ID,
+        channel=CHANNEL_NAME,
         blocks=[
             {
                 'type': 'call',
@@ -95,7 +76,7 @@ def handle_validation(zoom_event):
 
 
 def add_participant_to_call(user):
-    call_id = get('co-working-room-call-id')
+    call_id = get_call_id()
     response = slack_client.calls_participants_add(
         id=call_id,
         users=[user]
@@ -128,8 +109,22 @@ def handle_paticipantpant_joined(zoom_event):
     add_participant_to_call(user)
 
 
+def get_call_id():
+    response = slack_client.conversations_history(
+        channel=CHANNEL_ID,
+        limit=1,
+    )
+
+    messages = response['messages']
+    message = messages[0]
+    message_block = message['blocks'][0]
+    call_id = message_block['call_id']
+
+    return call_id
+
+
 def remove_participant_from_call(user):
-    call_id = get('co-working-room-call-id')
+    call_id = get_call_id()
     response = slack_client.calls_participants_remove(
         id=call_id,
         users=[user]
@@ -144,8 +139,6 @@ def handle_paticipantpant_left(event):
 
 
 def lambda_handler(event, context):
-    print("Called")
-
     if is_slash_command(event):
         call_id = handle_start_call()
         return call_id 
