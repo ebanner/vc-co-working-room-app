@@ -2,5 +2,10 @@
 [build]
   functions = "netlify/functions"
 
+[[redirects]]
+  from = "/*"
+  to = "/.netlify/functions/hello-world"
+  status = 200
+
 [dev]
   port = 8888
