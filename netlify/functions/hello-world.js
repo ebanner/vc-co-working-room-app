@@ -1,14 +1,12 @@
 const { WebClient } = require("@slack/web-api");
 
+const CHANNEL_ID = process.env.CHANNEL_ID;
+const CHANNEL_NAME = process.env.CHANNEL_NAME;
+
 const SLACK_BOT_TOKEN = process.env.EDWARDS_SLACKBOT_DEV_SLACK_BOT_TOKEN;
 
 const ZOOM_JOIN_URL = process.env.ZOOM_JOIN_URL;
-
 const ZOOM_DESKTOP_APP_JOIN_URL = process.env.ZOOM_DESKTOP_APP_JOIN_URL;
-
-const CHANNEL_ID = process.env.CHANNEL_ID;
-
-const CHANNEL_NAME = process.env.CHANNEL_NAME;
 
 const slack = new WebClient(SLACK_BOT_TOKEN);
 
