@@ -5,15 +5,10 @@ import json
 import os
 import urllib.parse
 
-import boto3
 from slack_sdk import WebClient
 
 CHANNEL_NAME = 'co-working-room'
 CHANNEL_ID = 'C095C1P7U64'
-
-s3 = boto3.client('s3')
-
-BUCKET = 'storage9'
 
 SLACK_BOT_TOKEN = os.environ['EDWARDS_SLACKBOT_DEV_SLACK_BOT_TOKEN']
 
@@ -24,19 +19,6 @@ ZOOM_WEBHOOK_SECRET_TOKEN = os.environ["ZOOM_WEBHOOK_SECRET_TOKEN"]
 ZOOM_JOIN_URL = os.environ["ZOOM_JOIN_URL"]
 
 ZOOM_DESKTOP_APP_JOIN_URL = os.environ["ZOOM_DESKTOP_APP_JOIN_URL"]
-
-
-def put(key, value):
-    s3.put_object(Bucket=BUCKET, Key=key, Body=value)
-
-
-def get(key):
-    """If there is no key entry then return None"""
-
-    object = s3.get_object(Bucket=BUCKET, Key=key)
-
-    value = object['Body'].read().decode('utf-8')
-    return value
 
 
 def is_slash_command(event):
