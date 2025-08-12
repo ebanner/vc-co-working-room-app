@@ -27,6 +27,25 @@ function parseBody(event) {
 }
 
 
+async function handleStartCall() {
+  // Create a Slack call and post a call block
+  const created = await slack.calls.add({
+    title: "co-working-room",
+    external_unique_id: "0xDEADBEEF",
+    join_url: ZOOM_JOIN_URL,
+    desktop_app_join_url: ZOOM_DESKTOP_APP_JOIN_URL,
+  });
+
+  const call_id = created?.call?.id;
+  await slack.chat.postMessage({
+    channel: CHANNEL_NAME,
+    blocks: [{ type: "call", call_id }],
+  });
+
+  return call_id;
+}
+
+
 function handleValidation(zoomEvent) {
   const plainToken = zoomEvent?.payload?.plainToken || "";
   const encryptedToken = crypto
@@ -78,8 +97,17 @@ function toSlackUser(zoomEvent) {
 }
 
 
+function isSlashCommand(event) {
+  const body = parseBody(event);
+  return typeof body?.command === "string" && body.command.startsWith("/");
+}
+
+
 exports.handler = async function(event) {
-  // console.log('event', event)
+  if (isSlashCommand(event)) {
+    const call_id = await handleStartCall();
+    return { statusCode: 200, body: JSON.stringify(call_id) }
+  }
 
   // Zoom webhooks
   const zoomEvent = parseBody(event);
@@ -97,29 +125,6 @@ exports.handler = async function(event) {
     await removeParticipant(toSlackUser(zoomEvent));
     return { statusCode: 204 };
   }
-
-  const params = new URLSearchParams(event.body);
-  const command = params.get("command");
-  console.log("Slash command:", command);
-
-  await slack.chat.postMessage({
-    channel: CHANNEL_NAME,
-    text: `Hello from Netlify! You ran ${command}`
-  });
-
-  // Create a Slack call and post a call block
-  const created = await slack.calls.add({
-    title: CHANNEL_NAME,
-    external_unique_id: "0xDEADBEEF",
-    join_url: ZOOM_JOIN_URL,
-    desktop_app_join_url: ZOOM_DESKTOP_APP_JOIN_URL,
-  });
-
-  const call_id = created?.call?.id;
-  await slack.chat.postMessage({
-    channel: CHANNEL_NAME,
-    blocks: [{ type: "call", call_id }],
-  });
 
   return {
     statusCode: 200,
