@@ -103,6 +103,12 @@ function isSlashCommand(event) {
 }
 
 
+async function getActiveParticipants() {
+  const resp = await slack.conversations.history({ channel: CHANNEL_ID, limit: 1 });
+  return resp?.messages?.[0]?.blocks?.[0]?.call?.v1?.active_participants ?? [];
+}
+
+
 exports.handler = async function(event) {
   if (isSlashCommand(event)) {
     const call_id = await handleStartCall();
@@ -123,6 +129,11 @@ exports.handler = async function(event) {
 
   else if (zoomEventName === "meeting.participant_left") {
     await removeParticipant(toSlackUser(zoomEvent));
+    const active = await getActiveParticipants();
+    if (active.length === 0) {
+      const call_id = await getCallIdFromChannel();
+      await slack.calls.end({ id: call_id });
+    }
     return { statusCode: 204 };
   }
 
